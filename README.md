@@ -75,8 +75,8 @@ folder_or_file = 0
 
 - `folder_or_file = 0`
 
-![3](F:\filePython\PycharmProject\zhihuSpider\img\3.jpg)
+![3](https://raw.githubusercontent.com/397179459/zhihuSpider/master/img/3.jpg)
 
 - `folder_or_file = 1`
 
-![4](F:\filePython\PycharmProject\zhihuSpider\img\4.jpg)
+![4](https://raw.githubusercontent.com/397179459/zhihuSpider/master/img/4.jpg))

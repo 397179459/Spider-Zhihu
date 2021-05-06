@@ -1,3 +1,6 @@
+# @Author: wanglei03
+# @Time: 2021-5-6 21:25:19
+
 import json
 import logging
 import os
@@ -143,11 +146,11 @@ def thread_pool_download(imgUrlList):
 
 if __name__ == '__main__':
     # 采用问题和答案 ID 下载，必须都输入
-    question_id = '424555505'
+    question_id = ''
     answer_id = ''
     # 问题ID列表，多份快乐，如果不想单独设置每个回答下的下载数量， 修改 want_answer_num = answer_counts 即为下载全部
     # question_id_l = [366062253, 338323696, 424555505, 350939352]  # 我乱打的几个ID，兄弟们自己不要当真（狗头）
-    question_id_l = [366062253, 350939352, 338323696, ]
+    question_id_l = [316722332, 397912593, ]
 
     # 判断用户是否输入了 question_id 和 answer id， 如果输入了，就采用 BeautifulSoup4 的方法解析 html ，而非解析json
     if question_id and answer_id:
@@ -202,7 +205,7 @@ if __name__ == '__main__':
                     path = os.getcwd()
                     new_path = str(path) + '-qid-' + question_id + '-' + question_chinese
                     # 选择是否保存成文件夹  1  还是 按照一个文件下不同文件名区分  0
-                    folder_or_file = 0
+                    folder_or_file = 1
                     if folder_or_file:
                         absolute_dir = new_path + '\\' + '{}-aid-{}-{}'.format(j + 1, my_answer_id, author_chinese)
                     else:

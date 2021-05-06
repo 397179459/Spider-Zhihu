@@ -45,7 +45,7 @@ if __name__ == '__main__':
 ......
 ```
 
-![1](F:\filePython\PycharmProject\zhihuSpider\img\1.jpg)
+![1](https://raw.githubusercontent.com/397179459/zhihuSpider/master/img/1.jpg)
 
 ##### 下面的讲解都是针对第二种问题列表下载的方式
 
@@ -71,7 +71,7 @@ for j in range(want_answer_num):
 folder_or_file = 0	
 ```
 
-![2](F:\filePython\PycharmProject\zhihuSpider\img\2.jpg)
+![2](https://raw.githubusercontent.com/397179459/zhihuSpider/master/img/2.jpg)
 
 - `folder_or_file = 0`
 

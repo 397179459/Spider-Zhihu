@@ -1,14 +1,26 @@
 ### 知乎图片下载爬虫-zhihuSpider
 
-@ 2021-5-6 上传第一版，最近想下载一些知乎的图片，所以就做了这个，至于具体用来爬什么图片，兄弟们自己斟酌，身体要紧
+> @ 2021-5-9 02:48:17 重大更新：
+>
+> - 废除 `re_get_img_url` 函数
+>
+> - 测试的时候发现其实获取json中的content内容后，也是可以解析成soup对象的，那么就代表可以跟解析指定答案的HTML一样，用bf获取图片地址，而且还可以把这一模块抽取出来，便于代码复用
+>
+> - 
+>   保存文件夹时增加当前的时间戳
+>   
+> 
+> @ 2021-5-6 上传第一版，最近想下载一些知乎的图片，所以就做了这个，至于具体用来爬什么图片，兄弟们自己斟酌，身体要紧
+
+#### [爬取的思路记录在这里](https://github.com/397179459/zhihuSpider/tree/master/analysis)
 
 #### 目前实现的功能：
 
 - 多线程下载图片，所以下载会比较无序，但是能保证都下载
 - 默认的下载位置是爬虫文件夹的同级目录
-
+- 支持 以文件夹归档和不同文件名保存图片
 - 支持指定问题和答案ID下载图片，采用 `BeautifulSoup4`
-- 支持问题ID列表，下载点赞前多少 `num` 的回答图片，具体的使用方法都写在代码注释中，采用`json`+`re`
+- 支持问题ID列表，下载点赞前多少 `num` 的回答图片，具体的使用方法都写在代码注释中，采用`json`+`bf`
 
 #### 待完成：
 
@@ -28,6 +40,7 @@ import socket
 import random
 import threadpool
 from bs4 import BeautifulSoup
+import time
 ```
 
 #### 如何使用：
@@ -46,7 +59,7 @@ if __name__ == '__main__':
 ......
 ```
 
-![1](https://raw.githubusercontent.com/397179459/zhihuSpider/master/img/1.jpg)
+[![gJd158.jpg](https://z3.ax1x.com/2021/05/09/gJd158.jpg)](https://imgtu.com/i/gJd158)
 
 ##### 下面的讲解都是针对第二种问题列表下载的方式
 
@@ -72,12 +85,12 @@ for j in range(want_answer_num):
 folder_or_file = 0	
 ```
 
-![2](https://raw.githubusercontent.com/397179459/zhihuSpider/master/img/2.jpg)
+[![gJdYvj.png](https://z3.ax1x.com/2021/05/09/gJdYvj.png)](https://imgtu.com/i/gJdYvj)
 
 - `folder_or_file = 0`
 
-![3](https://raw.githubusercontent.com/397179459/zhihuSpider/master/img/3.jpg)
+[![gJdlUf.jpg](https://z3.ax1x.com/2021/05/09/gJdlUf.jpg)](https://imgtu.com/i/gJdlUf)
 
 - `folder_or_file = 1`
 
-![4](https://raw.githubusercontent.com/397179459/zhihuSpider/master/img/4.jpg))
+[![gJdevd.jpg](https://z3.ax1x.com/2021/05/09/gJdevd.jpg)](https://imgtu.com/i/gJdevd)

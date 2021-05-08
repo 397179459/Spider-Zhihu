@@ -1,5 +1,6 @@
 # @Author: wanglei03
 # @Time: 2021-5-6 21:25:19
+# @Method: 实现指定问题和答案的ID爬取图片
 
 import json
 import logging

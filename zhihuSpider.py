@@ -9,17 +9,17 @@ import re
 import socket
 import time
 import urllib.request
+import uuid
+from concurrent.futures import ThreadPoolExecutor
 
-import threadpool
 from bs4 import BeautifulSoup
 
-logging.basicConfig(level=logging.NOTSET)
+from decorators import log_decorator
+
+logging.basicConfig(level="DEBUG")
 socket.setdefaulttimeout(60)
 # 2021-5-9 01:53:54 保存文件夹时增加当前的时间戳
 NOW_TIME = time.strftime('%Y%m%d%H%M', time.localtime())
-
-QUESTION_CHINESE = ''
-AUTHOR_CHINESE = ''
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36 Edg/90.0.818.51",
@@ -85,7 +85,7 @@ def soup_img_url(j, html_content):
         img_url_item_o = soup.find_all('img', class_='content_image lazy')
         for y in img_url_item_o:
             img_url_list_bf.append(y.get('data-actualsrc'))
-        logging.info(f'========第 {j + 1} 个答案用 bf4 解析到 {len(img_url_list_bf)} 张图片=========')
+        logging.info(f'========第 {j + 2} 个答案用 bf4 解析到 {len(img_url_list_bf)} 张图片=========')
 
         if j == -1:
             question_name_s = soup.find(class_="QuestionHeader-title").get_text()  # 问题中文名
@@ -106,43 +106,29 @@ def url_answer(j, question_id, answer_id):
     info_list = soup_img_url(j, content)
     question_name = info_list[1]
     writer_name = info_list[2]
+    global QUESTION_CHINESE
+    global AUTHOR_CHINESE
     QUESTION_CHINESE = re_only_chinese(question_name)
     AUTHOR_CHINESE = re_only_chinese(writer_name)
     return info_list[0]
 
 
 # 根据图片地址下载图片，这里的 i 主要是用来文件命名
-def download_pic(i, img_url):
-    folder_or_file = 0
-    if folder_or_file:
-        suffix = '\\{}.jpg'.format(i + 1)
-    else:
-        suffix = '\\{}-aid-{}-{}-{}.jpg'.format(j + 1, my_answer_id, author_chinese, i + 1)
-    file_name = absolute_dir + suffix
+def download_pic(img_info):
     try:
-        urllib.request.urlretrieve(img_url, file_name)
-        logging.info('第 {} 张下载完成 {}'.format(i + 1, file_name))
+        urllib.request.urlretrieve(img_info['url'], img_info['filename'])
+        logging.info(f"第 {img_info['index']} 张下载完成 {img_info['filename']}")
     except:
         logging.warning("链接失效，图片无法下载")
 
 
 # 多线程下载列表中的url
-def thread_pool_download(img_url_list, question_id, answer_id, absolute_dir):
-    # 定义线程池数量
-    pool = threadpool.ThreadPool(10)
-    '''
-    makeRequests 方法第二个参数必须是 iter 对象，
-    然后我们的download_pic函数是用到了 下标（用来保存文件名）和url 2个参数，所以这里必须这样遍历一遍
-    或者这里你可以把url转成文件名也可以，download_pic 函数只传 url 1个参数的话，就不用这一步遍历了
-    '''
-    _data = [((index, x), None) for index, x in enumerate(img_url_list)]
-    th_request = threadpool.makeRequests(download_pic, _data)
-    for req in th_request:
-        pool.putRequest(req)
-    pool.wait()
-    logging.info(
-        f'https://www.zhihu.com/question/{question_id}/answer/{answer_id}  中 {len(img_url_list)} 张图片下载完成')
-    logging.info('保存路径为   {}'.format(absolute_dir))
+def threadpool_list_download(workers, img_url_list, absolute_dir):
+    img_url_dic_list = img_url_list_todiclist(img_url_list, absolute_dir)
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        executor.map(download_pic, img_url_dic_list)
+    logging.info(f' {len(img_url_dic_list)} 张图片下载完成')
+    logging.info(f'保存路径:{absolute_dir}')
 
 
 # 从字符串中只匹配中文
@@ -153,12 +139,27 @@ def re_only_chinese(s):
     return ret[:20]
 
 
+def img_url_list_todiclist(urls, absolute_dir):
+    pattern = r'([\w-]+\.(jpg|png))'
+    # 通过列表推导式生成新的列表，每个元素是一个字典，包括序号、文件名和原始URL
+    new_list = []
+    for i, url in enumerate(urls, start=1):
+        match = re.search(pattern, url)
+        if match is not None:
+            filename = match.group(1)
+        else:
+            filename = str(uuid.uuid4()) + '.jpg'
+        filename = os.path.join(absolute_dir, filename)
+        new_list.append({'index': i, 'filename': filename, 'url': url})
+    return new_list
+
+
 def get_by_answer_list(answer_l):
     for x in answer_l:
-        question_id = x['q_id']
-        answer_id = x['a_id']
+        question_id = str(x['q_id'])
+        answer_id = str(x['a_id'])
         logging.info(
-            f'正在使用 beautifulSoup4 方式解析 https://www.zhihu.com/question/{str(question_id)}/answer/{str(answer_id)}')
+            f'正在使用 beautifulSoup4 方式解析 https://www.zhihu.com/question/{question_id}/answer/{answer_id}')
         # 因为 soup_img_url 函数在回答中要用到循环，所以这里指定一个j，也相当于一个 flag 标志位
         j = -1
         img_url_list = url_answer(j, question_id, answer_id)
@@ -170,7 +171,9 @@ def get_by_answer_list(answer_l):
             absolute_dir = new_path + '\\' + 'aid-{}-{}'.format(answer_id, AUTHOR_CHINESE)
             if not os.path.exists(absolute_dir):
                 os.makedirs(absolute_dir)
-            thread_pool_download(img_url_list,  question_id, answer_id, absolute_dir)
+
+            threadpool_list_download(15, img_url_list, absolute_dir)
+
         else:
             logging.warning(
                 f'此答案下没有任何图片，点击 https://www.zhihu.com/question/{question_id}/answer/{answer_id} 查看')
@@ -215,7 +218,7 @@ def get_by_question_list(question_id_l):
                     os.makedirs(absolute_dir)
                 # 获取总共多少张图片
                 img_num = len(img_url_list_tmp)
-                thread_pool_download(img_url_list_tmp)
+                # thread_pool_download(img_url_list_tmp)
             else:
                 logging.warning(
                     '第 {} 个答案下没有任何图片，点击 https://www.zhihu.com/question/{}/answer/{} 查看'.format(j + 1,
@@ -228,12 +231,13 @@ def get_by_question_list(question_id_l):
         logging.info('Done....############# 问题 ########### {} 下载完毕'.format(question_name))
 
 
+@log_decorator
 def run():
-    answer_list = [{'q_id': 288424573, 'a_id': 3064929266},
+    answer_dic_list = [{'q_id': 288424573, 'a_id': 3064929266},
                    {'q_id': 288424573, 'a_id': 928479462},
                    ]
-    if answer_list:
-        get_by_answer_list(answer_list)
+    if answer_dic_list:
+        get_by_answer_list(answer_dic_list)
 
     # 问题ID列表，多份快乐，如果不想单独设置每个回答下的下载数量， 修改 want_answer_num = answer_counts 即为下载全部
     # question_id_l = [366062253, 338323696, 424555505, 350939352]  # 我乱打的几个ID，兄弟们自己不要当真（狗头）
@@ -245,4 +249,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-    logging.info('!!!!!!!!!!!!!  执行完毕，谢谢使用  !!!!!!!!!!!!!!!')
